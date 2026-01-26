@@ -3,72 +3,88 @@
 $lines = explode("\n",file_get_contents('./rolls.txt'));
 $grid = [];
 foreach($lines as $line){
+    if ($line === '') continue; // skip empty trailing lines
     $grid[] = str_split($line);
 }
-$rowNumber = count($grid[0]);
-$total = 0;
-for($row=0; $row <= count($grid) - 1; $row++){
-    for($col=0 ; $col < $rowNumber; $col++){
 
-        $value = $grid[$row][$col];
-
-        if($value != "@") continue;
-
-        $paperCount = findPaperCount($row, $col, $grid);
-
-        if($paperCount < 4){
-            $total++;
-            continue;
-        }
-
-
-    }
-
+if (empty($grid)) {
+    print(0);
+    exit;
 }
 
- function findPaperCount($row, $col, $grid){
+$rowCount = count($grid);
+
+$totalRemoved = 0;
+
+// Repeat: find all accessible '@' rolls, mark as removed 'x', until none left
+while (true) {
+    $toRemove = [];
+
+    for($row=0; $row < $rowCount; $row++){
+        $colCountRow = count($grid[$row]);
+        for($col=0 ; $col < $colCountRow; $col++){
+            $value = $grid[$row][$col];
+            if($value != "@") continue;
+
+            $paperCount = findPaperCount($row, $col, $grid);
+
+            // Accessible if fewer than 4 adjacent '@'
+            if($paperCount < 4){
+                $toRemove[] = [$row, $col];
+            }
+        }
+    }
+
+    if (empty($toRemove)) break;
+
+    foreach ($toRemove as [$r, $c]) {
+        // mark removed
+        $grid[$r][$c] = 'x';
+        $totalRemoved++;
+    }
+}
+
+print($totalRemoved);
+
+function findPaperCount($row, $col, $grid){
     $total = 0;
 
     // check top
-      // first check if its the first row in grid 
     if($row != 0){
-        // check top
         $topRow = $row  - 1;
-
-        $topRowValue = $grid[$topRow][$col];
-        if($topRowValue == "@")  $total++;
+        // ensure column exists in top row
+        if ($col < count($grid[$topRow])) {
+            $topRowValue = $grid[$topRow][$col];
+            if($topRowValue == "@")  $total++;
+        }
 
         // check top left
-
-        $leftValue = checkLeft(row: $topRow,col:$col,grid:$grid );
+        $leftValue = checkLeft($topRow, $col, $grid);
         if($leftValue == "@") $total++;
 
         //check top right 
-        $rightValue = checkRight(row: $topRow,col:$col,grid:$grid );
+        $rightValue = checkRight($topRow, $col, $grid);
         if($rightValue == "@") $total++;
-
-
     }
 
-    // buttom
+    // bottom
     if($row < count($grid) - 1 ){
-        $buttomRow = $row  + 1;
-        $buttomRowValue = $grid[$buttomRow][$col];
-        if($buttomRowValue == "@")  $total++;
+        $bottomRow = $row  + 1;
+        if ($col < count($grid[$bottomRow])) {
+            $bottomRowValue = $grid[$bottomRow][$col];
+            if($bottomRowValue == "@")  $total++;
+        }
 
-
-        // buttom left
-        $leftValue = checkLeft(row: $buttomRow,col:$col,grid:$grid );
+        // bottom left
+        $leftValue = checkLeft($bottomRow, $col, $grid);
         if($leftValue == "@") $total++;
 
-        // buttom right
-        $rightValue = checkRight(row: $buttomRow,col:$col,grid:$grid );
+        // bottom right
+        $rightValue = checkRight($bottomRow, $col, $grid);
         if($rightValue == "@") $total++;
     }
 
-
-
-    // left 
+    // left
     if($col != 0 ){
         $leftIndex = $col - 1;
         $leftValue = $grid[$row][$leftIndex];
@@ -81,30 +97,28 @@ for($row=0; $row <= count($grid) - 1; $row++){
         if($rightValue == "@") $total++;
     }
 
-
     return $total;
-
 }
 
 function checkLeft($row, $col, $grid){
-     // left 
+    // left
     if($col != 0 ){
         $leftIndex = $col - 1;
-        $leftValue = $grid[$row][$leftIndex];
-        return $leftValue;
-        // if($leftValue == "@") $total++;
+        if ($leftIndex < count($grid[$row])) {
+            $leftValue = $grid[$row][$leftIndex];
+            return $leftValue;
+        }
     }
+    return null;
 }
 
 function checkRight($row, $col, $grid){
     if($col != count($grid[$row]) - 1){
         $rightIndex = $col + 1;
-        $rightValue = $grid[$row][$rightIndex];
-        return $rightValue;
+        if ($rightIndex < count($grid[$row])) {
+            $rightValue = $grid[$row][$rightIndex];
+            return $rightValue;
+        }
     }
+    return null;
 }
-
-
-print($total);
-
-
